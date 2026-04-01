@@ -26,6 +26,22 @@ namespace SmartFactoryWebApi.Data
         public DbSet<WarehouseDetail> WarehouseDetails { get; set; }
         public DbSet<BinDetail> BinDetails { get; set; }
         public DbSet<StockDetail> StockDetails { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<LockedBarNo>()
+                .HasIndex(x => x.BarNo)
+                .IsUnique()
+                .HasDatabaseName("UX_CUS_PICKING_LOCK_BARNO_BAR_NO")
+                .HasFilter("[BAR_NO] IS NOT NULL");
+
+            modelBuilder.Entity<LockedBarNo>()
+                .HasIndex(x => new { x.DocNo, x.BarNo })
+                .HasDatabaseName("IX_CUS_PICKING_LOCK_BARNO_DOCNO_BARNO");
+        }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
         }

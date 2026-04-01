@@ -24,7 +24,11 @@ namespace SmartFactoryWebApi.Models
         public int Row { get; set; }
         [Column("COLUMN")]
         public int Column { get; set; }
+        [Column("BIN_SIZE")]
+        public int BinSize { get; set; } = 1;  // 默认1（普通货架），大盘货架为3
         [Column("DELETE_FLAG")]
         public string DeleteFlag { get; set; }
+        [Column("SORT_DIRECTION")]
+        public string SortDirection { get; set; } = "ASC";  // ASC 或 DESC
     }
 }

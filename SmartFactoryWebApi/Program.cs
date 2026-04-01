@@ -4,7 +4,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SmartFactoryWebApi.Data;
 using Microsoft.EntityFrameworkCore.SqlServer;
-using SmartFactoryWebApi.Services; // Ìí¼ÓÒÔÏÂ using Ö¸ÁîÒÔÐÞ¸´ UseSqlServer À©Õ¹·½·¨Î´ÕÒµ½µÄÎÊÌâ
+using SmartFactoryWebApi.Services; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ using Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½Þ¸ï¿½ UseSqlServer ï¿½ï¿½Õ¹ï¿½ï¿½ï¿½ï¿½Î´ï¿½Òµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+using SmartFactoryWebApi.Options;
 
 
 namespace SmartFactoryWebApi;
@@ -14,17 +15,19 @@ internal class Program
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
-        // DbContext ×¢²á
-        // DbContext ×¢²á£¬¶ÁÈ¡ appsettings.json ÖÐµÄÁ¬½Ó´®
+        // DbContext ×¢ï¿½ï¿½
+        // DbContext ×¢ï¿½á£¬ï¿½ï¿½È¡ appsettings.json ï¿½Ðµï¿½ï¿½ï¿½ï¿½Ó´ï¿½
         builder.Services.AddDbContext<WmsDbContext>(options =>
             options.UseSqlServer(
                 builder.Configuration.GetConnectionString("DefaultConnection"),
                 sql => sql.UseCompatibilityLevel(100)));
 
-        // ÒµÎñ·þÎñ×¢²á
+        // Òµï¿½ï¿½ï¿½ï¿½ï¿½×¢ï¿½ï¿½
         builder.Services.AddScoped<IPickDetailService, PickDetailService>();
         builder.Services.AddScoped<IEntryDetailService, EntryDetailService>();
         builder.Services.AddScoped<IWMSLightService, WMSLightService>();
+        builder.Services.Configure<AppUpdateOptions>(builder.Configuration.GetSection("AppUpdate"));
+        builder.Services.AddScoped<IAppUpdateService, AppUpdateService>();
         
         // Add services to the container.
         builder.Services.AddControllers();
@@ -33,7 +36,7 @@ internal class Program
 
         var app = builder.Build();
 
-        // ÔÊÐí¿ª·¢»·¾³ OR Éú²ú»·¾³·ÃÎÊ Swagger
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ OR ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Swagger
         if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
         {
             app.MapOpenApi(); 

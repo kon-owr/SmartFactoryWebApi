@@ -30,5 +30,7 @@ namespace SmartFactoryWebApi.Models
         public DateTime? CreateTime { get; set; }
         [Column("CREATOR")]
         public string? Creator { get; set; }
+        [Column("WAREHOUSE_LOCATION")]
+        public string? WarehouseLocation { get; set; }  // 仓库编码
     }
 }

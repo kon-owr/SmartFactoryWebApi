@@ -45,16 +45,21 @@ namespace SmartFactoryWebApi.Controllers
             return Ok(pickDetails);
         }
 
-        // 获取领料单明细：POST /api/pick/details
+        // 获取锁定条码：POST /api/pick/lockedbarcode
         [HttpPost("lockedbarcode", Name = "pick-lockedbarcode")]
-        public async Task<ActionResult<Result<List<LockedBarNo>>>> GetLockedBarCode([FromBody] GetDocNoRequest getDocNoRequest)
+        public async Task<ActionResult<Result<List<LockedBarNo>>>> GetLockedBarCode([FromBody] PickReserveRequest request)
         {
-            if (getDocNoRequest == null || string.IsNullOrWhiteSpace(getDocNoRequest.DocNo))
+            if (request == null || string.IsNullOrWhiteSpace(request.DocNo))
             {
-                return BadRequest("docno is required.");
+                return BadRequest(Result<List<LockedBarNo>>.Fail("领料单号不能为空"));
             }
 
-            var lockedBarCode = await _pickDetailService.GetLockedBarNoByDocNosAsync(getDocNoRequest.DocNo);
+            if (string.IsNullOrWhiteSpace(request.WarehouseLocation))
+            {
+                return BadRequest(Result<List<LockedBarNo>>.Fail("仓库编码不能为空"));
+            }
+
+            var lockedBarCode = await _pickDetailService.GetLockedBarNoByDocNosAsync(request.DocNo, request.WarehouseLocation);
             return Ok(lockedBarCode);
         }
 
@@ -64,7 +69,7 @@ namespace SmartFactoryWebApi.Controllers
         {
             if (getItemGuidRequest == null || string.IsNullOrWhiteSpace(getItemGuidRequest.ItemGuid))
             {
-                return BadRequest("docno is required.");
+                return BadRequest(Result<string>.Fail("物料标识不能为空"));
             }
 
             var itemNo = await _pickDetailService.GetItemNoByItemGuid(getItemGuidRequest.ItemGuid);
@@ -77,12 +82,12 @@ namespace SmartFactoryWebApi.Controllers
         {
             if (request == null)
             {
-                return BadRequest(Result<Result<List<BarDetail>>>.Fail("请求为空"));
+                return BadRequest(Result<List<BarDetail>>.Fail("请求为空"));
             }
 
             if (string.IsNullOrWhiteSpace(request.ItemGuid))
             {
-                return BadRequest(Result<Result<List<BarDetail>>>.Fail("料号不能为空"));
+                return BadRequest(Result<List<BarDetail>>.Fail("料号不能为空"));
             }
 
             // 调用 Service 方法 (假设 Service 方法名为 GetBarByRequiredQtyQtyAndProductNo)
@@ -93,6 +98,28 @@ namespace SmartFactoryWebApi.Controllers
             );
 
             return Ok(bars);
+        }
+
+        [HttpPost("reserve", Name = "pick-reserve")]
+        public async Task<ActionResult<Result<List<VariableItem>>>> Reserve([FromBody] PickReserveRequest request)
+        {
+            if (request == null)
+            {
+                return BadRequest(Result<List<VariableItem>>.Fail("请求为空"));
+            }
+
+            if (string.IsNullOrWhiteSpace(request.DocNo))
+            {
+                return BadRequest(Result<List<VariableItem>>.Fail("领料单号不能为空"));
+            }
+
+            if (string.IsNullOrWhiteSpace(request.WarehouseLocation))
+            {
+                return BadRequest(Result<List<VariableItem>>.Fail("仓库编码不能为空"));
+            }
+
+            var result = await _pickDetailService.ReserveBarsByDocNoAsync(request.DocNo, request.WarehouseLocation);
+            return Ok(result);
         }
 
         // 获取条码列表：POST /api/pick/bars
@@ -109,31 +136,72 @@ namespace SmartFactoryWebApi.Controllers
                 return BadRequest(Result<bool>.Fail("条码列表不能为空"));
             }
 
-            // 调用 Service 方法 (假设 Service 方法名为 GetBarByRequiredQtyQtyAndProductNo)
-            var result = await _pickDetailService.LockBarsAsync(request.BarNolist, request.DocNo);
+            if (string.IsNullOrWhiteSpace(request.WarehouseLocation))
+            {
+                return BadRequest(Result<bool>.Fail("仓库编码不能为空"));
+            }
+
+            var result = await _pickDetailService.LockBarsAsync(request.BarNolist, request.DocNo, request.WarehouseLocation);
 
 
             return Ok(result);
         }
 
-        // 获取条码列表：POST /api/pick/bars
+        // 解锁条码：POST /api/pick/unlock
         [HttpPost("unlock", Name = "pick-unlock")]
         public async Task<ActionResult<Result<bool>>> UnLockBars([FromBody] LockBarsRequest request)
         {
             if (request == null)
             {
-                return BadRequest("Request body is null.");
+                return BadRequest(Result<bool>.Fail("请求为空"));
             }
 
-            if (request.BarNolist == null)
+            if (request.BarNolist == null || request.BarNolist.Count == 0)
             {
-                return BadRequest("ItemGuid is required.");
+                return BadRequest(Result<bool>.Fail("条码列表不能为空"));
             }
 
-            // 调用 Service 方法 (假设 Service 方法名为 GetBarByRequiredQtyQtyAndProductNo)
-            await _pickDetailService.UnLockBarsAsync(request.BarNolist);
+            if (string.IsNullOrWhiteSpace(request.DocNo))
+            {
+                return BadRequest(Result<bool>.Fail("领料单号不能为空"));
+            }
 
-            return Ok();
+            if (string.IsNullOrWhiteSpace(request.WarehouseLocation))
+            {
+                return BadRequest(Result<bool>.Fail("仓库编码不能为空"));
+            }
+
+            var result = await _pickDetailService.UnLockBarsAsync(request.BarNolist, request.DocNo, request.WarehouseLocation);
+
+            return Ok(result);
+        }
+
+        // 拣货完成：POST /api/pick/complete
+        [HttpPost("complete", Name = "pick-complete")]
+        public async Task<ActionResult<Result<bool>>> CompletePicking([FromBody] CompletePickingRequest request)
+        {
+            if (request == null)
+            {
+                return BadRequest(Result<bool>.Fail("请求为空"));
+            }
+
+            if (string.IsNullOrWhiteSpace(request.DocNo))
+            {
+                return BadRequest(Result<bool>.Fail("领料单号不能为空"));
+            }
+
+            if (request.BinNos == null || request.BinNos.Count == 0)
+            {
+                return BadRequest(Result<bool>.Fail("库位列表不能为空"));
+            }
+
+            if (string.IsNullOrWhiteSpace(request.WarehouseLocation))
+            {
+                return BadRequest(Result<bool>.Fail("仓库编码不能为空"));
+            }
+
+            var result = await _pickDetailService.CompletePickingAsync(request.DocNo, request.BinNos, request.WarehouseLocation);
+            return Ok(result);
         }
     }
 }

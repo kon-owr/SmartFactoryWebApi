@@ -23,8 +23,12 @@ namespace SmartFactoryWebApi.Services
 
         Task<Result<List<BarDetail>>> GetBarByRequiredQtyQtyAndProductNo(decimal? needQty, string productNo, string warehouseLocation);
 
-        Task<Result<bool>> LockBarsAsync(List<VariableItem> barNoList, string docNo);
-        Task<Result<bool>> UnLockBarsAsync(List<VariableItem> barNoList);
-        Task<Result<List<LockedBarNo>>> GetLockedBarNoByDocNosAsync(string docNo);
+        Task<Result<List<VariableItem>>> ReserveBarsByDocNoAsync(string docNo, string warehouseLocation);
+
+        Task<Result<bool>> LockBarsAsync(List<VariableItem> barNoList, string docNo, string warehouseLocation);
+        Task<Result<bool>> UnLockBarsAsync(List<VariableItem> barNoList, string docNo, string warehouseLocation);
+        Task<Result<List<LockedBarNo>>> GetLockedBarNoByDocNosAsync(string docNo, string warehouseLocation);
+
+        Task<Result<bool>> CompletePickingAsync(string docNo, List<string> binNos, string warehouseLocation);
     }
 }
